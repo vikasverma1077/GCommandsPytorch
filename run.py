@@ -18,6 +18,9 @@ parser.add_argument('--test_path', default='gcommands/test',
                     help='path to the test data folder')
 parser.add_argument('--valid_path', default='gcommands/valid',
                     help='path to the valid data folder')
+parser.add_argument('--train', type=str, default = 'vanilla', choices =['vanilla','mixup', 'mixup_new'])
+parser.add_argument('--mixup_alpha', type=float, default=0.0, help='alpha parameter for mixup')
+parser.add_argument('--mixup_eta', type=float, default=1.0)
 parser.add_argument('--batch_size', type=int, default=100,
                     metavar='N', help='training and valid batch size')
 parser.add_argument('--test_batch_size', type=int, default=100,
@@ -102,10 +105,15 @@ best_valid_loss = np.inf
 iteration = 0
 epoch = 1
 
+def beta_mean(alpha, beta):
+    return alpha/(alpha+beta)
+
+if args.train == "mixup_new":
+        lamba_mod_mean = beta_mean(args.mixup_alpha + 1, args.mixup_alpha)
 
 # trainint with early stopping
 while (epoch < args.epochs + 1) and (iteration < args.patience):
-    train(train_loader, model, optimizer, epoch, args.cuda, args.log_interval)
+    train(train_loader, model, optimizer, epoch, args.cuda, args.log_interval, args, lamba_mod_mean)
     valid_loss = test(valid_loader, model, args.cuda)
     if valid_loss > best_valid_loss:
         iteration += 1
